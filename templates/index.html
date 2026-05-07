@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Placas</title>
+
+<style>
+body {
+    font-family: Arial;
+    padding: 15px;
+}
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 3px 0;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: green;
+    color: white;
+    font-weight: bold;
+    border: none;
+    margin-top: 10px;
+}
+
+h4 {
+    margin-top: 15px;
+}
+</style>
+
+</head>
+<body>
+
+<h2>GERADOR DE PLACAS</h2>
+
+<form action="/gerar" method="POST">
+
+<select name="qtd">
+    <option value="6">6 placas</option>
+    <option value="8">8 placas</option>
+    <option value="12">12 placas</option>
+</select>
+
+<div id="campos"></div>
+
+<button type="submit">GERAR PDF</button>
+
+</form>
+
+<script>
+function gerarCampos() {
+    let div = document.getElementById("campos");
+    div.innerHTML = "";
+
+    for (let i = 0; i < 12; i++) {
+        div.innerHTML += `
+            <h4>Placa ${i+1}</h4>
+            <input name="produto${i}" placeholder="Produto">
+            <input name="marca${i}" placeholder="Marca">
+            <input name="preco${i}" placeholder="Preço">
+            <input name="peso${i}" placeholder="Peso">
+        `;
+    }
+}
+
+gerarCampos();
+
+// 🔥 ENTER pula campo
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        let inputs = Array.from(document.querySelectorAll("input"));
+        let index = inputs.indexOf(document.activeElement);
+
+        if (index > -1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+        }
+    }
+});
+</script>
+
+</body>
+</html>
