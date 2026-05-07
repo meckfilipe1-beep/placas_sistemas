@@ -1,3 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Gerador de Placas</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #f2f2f2;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* CONTAINER CENTRAL */
+.container {
+    width: 90%;
+    max-width: 500px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+}
+
+/* INPUTS */
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* BOTÃO */
+button {
+    width: 100%;
+    padding: 12px;
+    background: green;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* TÍTULOS */
+h2, h4 {
+    text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>GERADOR DE PLACAS</h2>
+
+<form action="/gerar" method="POST">
+
+<select name="qtd" id="qtd">
+    <option value="6">6 placas</option>
+    <option value="8">8 placas</option>
+    <option value="12">12 placas</option>
+</select>
+
+<div id="campos"></div>
+
+<button type="submit">GERAR PDF</button>
+
+</form>
+
+</div>
+
 <script>
 function gerarCampos(qtd) {
     let div = document.getElementById("campos");
@@ -14,11 +93,11 @@ function gerarCampos(qtd) {
     }
 }
 
-// padrão inicial
+// inicial (6 placas)
 gerarCampos(6);
 
-// quando mudar quantidade
-document.querySelector("select[name='qtd']").addEventListener("change", function() {
+// muda quantidade
+document.getElementById("qtd").addEventListener("change", function() {
     gerarCampos(parseInt(this.value));
 });
 
@@ -26,6 +105,7 @@ document.querySelector("select[name='qtd']").addEventListener("change", function
 document.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
         e.preventDefault();
+
         let inputs = Array.from(document.querySelectorAll("input"));
         let index = inputs.indexOf(document.activeElement);
 
@@ -35,3 +115,6 @@ document.addEventListener("keydown", function(e) {
     }
 });
 </script>
+
+</body>
+</html>
