@@ -2,20 +2,40 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Placas</title>
+<title>Gerador de Placas</title>
 
 <style>
 body {
+    margin: 0;
     font-family: Arial;
-    padding: 15px;
+    background: #f2f2f2;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
+/* CARD CENTRAL */
+.container {
+    width: 90%;
+    max-width: 600px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.15);
+}
+
+/* INPUTS */
 input, select {
     width: 100%;
-    padding: 8px;
-    margin: 3px 0;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
 }
 
+/* BOTÃO */
 button {
     width: 100%;
     padding: 12px;
@@ -23,16 +43,21 @@ button {
     color: white;
     font-weight: bold;
     border: none;
+    border-radius: 8px;
     margin-top: 10px;
 }
 
-h4 {
-    margin-top: 15px;
+/* TÍTULOS */
+h2, h4 {
+    text-align: center;
 }
 </style>
 
 </head>
+
 <body>
+
+<div class="container">
 
 <h2>GERADOR DE PLACAS</h2>
 
@@ -49,6 +74,8 @@ h4 {
 <button type="submit">GERAR PDF</button>
 
 </form>
+
+</div>
 
 <script>
 function gerarCampos() {
@@ -68,7 +95,7 @@ function gerarCampos() {
 
 gerarCampos();
 
-// 🔥 ENTER pula campo
+// ENTER pula campo
 document.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
         e.preventDefault();
