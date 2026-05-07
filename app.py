@@ -4,54 +4,100 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# =========================
+# FORMATAR PREÇO
+# =========================
 def formatar_preco(valor):
     try:
-        v = float(valor.replace(",", "."))
-        return f"{v:.2f}".replace(".", ",")
+        valor = float(valor.replace(",", "."))
+        return f"{valor:.2f}".replace(".", ",")
     except:
         return valor
 
-def ajustar_fonte(draw, texto, largura_max, fonte_path, tamanho):
+# =========================
+# AJUSTAR FONTE AUTOMÁTICA
+# =========================
+def ajustar_fonte(draw, texto, largura_max, tamanho):
     while tamanho > 10:
-        fonte = ImageFont.truetype(fonte_path, tamanho)
-        w, h = draw.textbbox((0,0), texto, font=fonte)[2:]
 
-        if w <= largura_max - 20:
+        try:
+            fonte = ImageFont.truetype("DejaVuSans-Bold.ttf", tamanho)
+        except:
+            fonte = ImageFont.load_default()
+
+        bbox = draw.textbbox((0, 0), texto, font=fonte)
+        largura = bbox[2] - bbox[0]
+
+        if largura <= largura_max - 20:
             return fonte
 
         tamanho -= 2
 
-    return ImageFont.truetype(fonte_path, tamanho)
+    return ImageFont.load_default()
 
+# =========================
+# PÁGINA INICIAL
+# =========================
 @app.route("/")
 def home():
     return render_template("index.html")
 
+# =========================
+# GERAR PDF
+# =========================
 @app.route("/gerar", methods=["POST"])
 def gerar():
+
     dados = request.form
     qtd = int(dados.get("qtd"))
 
+    # =========================
+    # CONFIGURAÇÃO DAS PLACAS
+    # =========================
     if qtd == 6:
         colunas, linhas = 2, 3
+        fonte_preco_tam = 120
+
     elif qtd == 8:
         colunas, linhas = 2, 4
+        fonte_preco_tam = 95
+
     else:
         colunas, linhas = 3, 4
+        fonte_preco_tam = 70
 
-    largura, altura = 1240, 1754
+    # =========================
+    # TAMANHO A4
+    # =========================
+    largura = 1240
+    altura = 1754
+
     img = Image.new("RGB", (largura, altura), "white")
     draw = ImageDraw.Draw(img)
 
     bloco_w = largura // colunas
     bloco_h = altura // linhas
 
-    fonte_marca = ImageFont.truetype("ariali.ttf", 35)
-    fonte_preco = ImageFont.truetype("arialbd.ttf", 120)
-    fonte_rs = ImageFont.truetype("arialbd.ttf", 40)
-    fonte_peso = ImageFont.truetype("arialbd.ttf", 40)
+    # =========================
+    # FONTES
+    # =========================
+    try:
+        fonte_marca = ImageFont.truetype("DejaVuSans.ttf", 32)
+        fonte_preco = ImageFont.truetype("DejaVuSans-Bold.ttf", fonte_preco_tam)
+        fonte_rs = ImageFont.truetype("DejaVuSans-Bold.ttf", int(fonte_preco_tam * 0.35))
+        fonte_peso = ImageFont.truetype("DejaVuSans-Bold.ttf", 35)
 
+    except:
+        fonte_marca = ImageFont.load_default()
+        fonte_preco = ImageFont.load_default()
+        fonte_rs = ImageFont.load_default()
+        fonte_peso = ImageFont.load_default()
+
+    # =========================
+    # GERAR CADA PLACA
+    # =========================
     for i in range(qtd):
+
         produto = dados.get(f"produto{i}", "").upper()
         marca = dados.get(f"marca{i}", "").upper()
         preco = formatar_preco(dados.get(f"preco{i}", ""))
@@ -63,37 +109,112 @@ def gerar():
         x = col * bloco_w
         y = lin * bloco_h
 
-        draw.rectangle([x, y, x+bloco_w, y+bloco_h], outline="black", width=3)
+        # =========================
+        # BORDA
+        # =========================
+        draw.rectangle(
+            [x, y, x + bloco_w, y + bloco_h],
+            outline="black",
+            width=4
+        )
 
-        def centralizar(texto, fonte, y_offset):
+        # =========================
+        # CENTRALIZAR TEXTO
+        # =========================
+        def centralizar(texto, fonte, y_local):
+
             if not texto:
                 return
-            w, h = draw.textbbox((0,0), texto, font=fonte)[2:]
-            draw.text((x + (bloco_w-w)//2, y + y_offset), texto, font=fonte, fill="black")
 
-        # 🔥 ajuste automático do produto
-        fonte_auto = ajustar_fonte(draw, produto, bloco_w, "arialbd.ttf", 55)
+            bbox = draw.textbbox((0, 0), texto, font=fonte)
 
-        centralizar(produto, fonte_auto, 20)
-        centralizar(marca, fonte_marca, 90)
+            largura_texto = bbox[2] - bbox[0]
 
-        # preço centralizado
-        w_val, h_val = draw.textbbox((0,0), preco, font=fonte_preco)[2:]
-        w_rs, h_rs = draw.textbbox((0,0), "R$", font=fonte_rs)[2:]
+            x_texto = x + (bloco_w - largura_texto) // 2
 
-        total = w_rs + w_val + 10
-        x_start = x + (bloco_w - total)//2
-        y_price = y + bloco_h//2 - 20
+            draw.text(
+                (x_texto, y + y_local),
+                texto,
+                font=fonte,
+                fill="black"
+            )
 
-        draw.text((x_start, y_price), "R$", font=fonte_rs, fill="black")
-        draw.text((x_start + w_rs + 10, y_price - 15), preco, font=fonte_preco, fill="black")
+        # =========================
+        # AJUSTE AUTOMÁTICO PRODUTO
+        # =========================
+        fonte_produto = ajustar_fonte(
+            draw,
+            produto,
+            bloco_w,
+            60
+        )
 
-        centralizar(peso, fonte_peso, bloco_h - 70)
+        # =========================
+        # PRODUTO
+        # =========================
+        centralizar(produto, fonte_produto, 20)
 
-    nome = f"placas_{datetime.now().strftime('%d-%m-%Y_%H-%M')}.pdf"
-    img.save(nome, "PDF")
+        # =========================
+        # MARCA
+        # =========================
+        centralizar(marca, fonte_marca, 95)
 
-    return send_file(nome, as_attachment=True)
+        # =========================
+        # PREÇO CENTRALIZADO
+        # =========================
+        bbox_val = draw.textbbox((0, 0), preco, font=fonte_preco)
+        bbox_rs = draw.textbbox((0, 0), "R$", font=fonte_rs)
 
+        largura_val = bbox_val[2] - bbox_val[0]
+        largura_rs = bbox_rs[2] - bbox_rs[0]
+
+        espaco = 10
+
+        largura_total = largura_rs + espaco + largura_val
+
+        x_inicio = x + (bloco_w - largura_total) // 2
+
+        y_preco = y + (bloco_h // 2) - 20
+
+        # R$
+        draw.text(
+            (x_inicio, y_preco + 40),
+            "R$",
+            font=fonte_rs,
+            fill="black"
+        )
+
+        # VALOR
+        draw.text(
+            (x_inicio + largura_rs + espaco, y_preco),
+            preco,
+            font=fonte_preco,
+            fill="black"
+        )
+
+        # =========================
+        # PESO
+        # =========================
+        centralizar(
+            peso,
+            fonte_peso,
+            bloco_h - 70
+        )
+
+    # =========================
+    # SALVAR PDF
+    # =========================
+    nome_pdf = f"placas_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.pdf"
+
+    img.save(nome_pdf, "PDF")
+
+    return send_file(
+        nome_pdf,
+        as_attachment=True
+    )
+
+# =========================
+# INICIAR SISTEMA
+# =========================
 if __name__ == "__main__":
     app.run()
