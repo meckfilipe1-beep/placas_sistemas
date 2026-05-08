@@ -5,8 +5,6 @@ from datetime import datetime
 app = Flask(__name__)
 
 # =========================
-# FORMATAR PREÇO
-# =========================
 def formatar_preco(valor):
     try:
         valor = float(valor.replace(",", "."))
@@ -14,8 +12,6 @@ def formatar_preco(valor):
     except:
         return valor
 
-# =========================
-# AJUSTAR FONTE
 # =========================
 def ajustar_fonte(draw, texto, largura_max, tamanho):
     while tamanho > 10:
@@ -25,9 +21,7 @@ def ajustar_fonte(draw, texto, largura_max, tamanho):
             fonte = ImageFont.load_default()
 
         bbox = draw.textbbox((0, 0), texto, font=fonte)
-        largura = bbox[2] - bbox[0]
-
-        if largura <= largura_max - 20:
+        if (bbox[2] - bbox[0]) <= largura_max - 20:
             return fonte
 
         tamanho -= 2
@@ -35,21 +29,16 @@ def ajustar_fonte(draw, texto, largura_max, tamanho):
     return ImageFont.load_default()
 
 # =========================
-# QUEBRAR TEXTO
-# =========================
 def quebrar_texto(draw, texto, fonte, largura_max):
-
     palavras = texto.split()
     linhas = []
     linha = ""
 
     for p in palavras:
         teste = linha + " " + p if linha else p
-
         bbox = draw.textbbox((0, 0), teste, font=fonte)
-        largura = bbox[2] - bbox[0]
 
-        if largura <= largura_max - 30:
+        if (bbox[2] - bbox[0]) <= largura_max - 30:
             linha = teste
         else:
             linhas.append(linha)
@@ -73,25 +62,23 @@ def gerar():
     qtd = int(dados.get("qtd"))
 
     # =========================
-    # CONFIG
+    # VERTICAL (SEM ROTATE)
     # =========================
     if qtd == 6:
         colunas, linhas = 2, 3
         fonte_preco_tam = 120
-
     elif qtd == 8:
         colunas, linhas = 2, 4
         fonte_preco_tam = 95
-
     else:
         colunas, linhas = 3, 4
         fonte_preco_tam = 70
 
-    # =========================
-    # A4
-    # =========================
     largura = 1240
     altura = 1754
+
+    img = Image.new("RGB", (largura, altura), "white")
+    draw = ImageDraw.Draw(img)
 
     bloco_w = largura // colunas
     bloco_h = altura // linhas
@@ -110,101 +97,70 @@ def gerar():
         fonte_rs = ImageFont.load_default()
         fonte_peso = ImageFont.load_default()
 
-    # =========================
-    # LISTA DE PLACAS
-    # =========================
-    placas = []
+    def centralizar(texto, fonte, x, y):
+        bbox = draw.textbbox((0, 0), texto, font=fonte)
+        lw = bbox[2] - bbox[0]
+        draw.text((x - lw//2, y), texto, font=fonte, fill="black")
 
+    # =========================
     for i in range(qtd):
-
-        temp = Image.new("RGB", (bloco_w, bloco_h), "white")
-        d = ImageDraw.Draw(temp)
 
         produto = dados.get(f"produto{i}", "").upper()
         marca = dados.get(f"marca{i}", "").upper()
         preco = formatar_preco(dados.get(f"preco{i}", ""))
         peso = dados.get(f"peso{i}", "").upper()
 
-        # BORDA
-        d.rectangle([0, 0, bloco_w, bloco_h], outline="black", width=4)
+        col = i % colunas
+        lin = i // colunas
+
+        x = col * bloco_w
+        y = lin * bloco_h
+
+        draw.rectangle([x, y, x + bloco_w, y + bloco_h], outline="black", width=4)
 
         # =========================
-        # PRODUTO
+        # PRODUTO (MAIS ESPAÇO)
         # =========================
-        fonte_produto = ajustar_fonte(d, produto, bloco_w, 52)
-        linhas = quebrar_texto(d, produto, fonte_produto, bloco_w)
+        fonte_produto = ajustar_fonte(draw, produto, bloco_w, 60)
+        linhas = quebrar_texto(draw, produto, fonte_produto, bloco_w)
 
-        y = 20
+        y_local = y + 20
 
         for linha in linhas:
-            bbox = d.textbbox((0, 0), linha, font=fonte_produto)
-            lw = bbox[2] - bbox[0]
-
-            d.text(((bloco_w - lw)//2, y), linha, font=fonte_produto, fill="black")
-            y += 45
+            centralizar(linha, fonte_produto, x + bloco_w//2, y_local)
+            y_local += 45
 
         # =========================
         # MARCA
         # =========================
         if marca:
-            bbox = d.textbbox((0, 0), marca, font=fonte_marca)
-            lw = bbox[2] - bbox[0]
-
-            d.text(((bloco_w - lw)//2, y + 10), marca, font=fonte_marca, fill="black")
+            centralizar(marca, fonte_marca, x + bloco_w//2, y_local + 10)
 
         # =========================
         # PREÇO
         # =========================
-        bbox_val = d.textbbox((0, 0), preco, font=fonte_preco)
-        bbox_rs = d.textbbox((0, 0), "R$", font=fonte_rs)
+        bbox_val = draw.textbbox((0, 0), preco, font=fonte_preco)
+        bbox_rs = draw.textbbox((0, 0), "R$", font=fonte_rs)
 
         lw_val = bbox_val[2] - bbox_val[0]
         lw_rs = bbox_rs[2] - bbox_rs[0]
 
         total = lw_val + lw_rs + 10
 
-        x_inicio = (bloco_w - total)//2
-        y_preco = bloco_h//2
+        x_inicio = x + (bloco_w - total)//2
+        y_preco = y + (bloco_h//2) - 20
 
-        d.text((x_inicio, y_preco), "R$", font=fonte_rs, fill="black")
-        d.text((x_inicio + lw_rs + 10, y_preco), preco, font=fonte_preco, fill="black")
+        draw.text((x_inicio, y_preco + 40), "R$", font=fonte_rs, fill="black")
+        draw.text((x_inicio + lw_rs + 10, y_preco), preco, font=fonte_preco, fill="black")
 
         # =========================
         # PESO
         # =========================
         if peso:
-            bbox = d.textbbox((0, 0), peso, font=fonte_peso)
-            lw = bbox[2] - bbox[0]
-
-            d.text(((bloco_w - lw)//2, bloco_h - 60), peso, font=fonte_peso, fill="black")
-
-        # =========================
-        # ROTACIONA 90°
-        # =========================
-        temp = temp.rotate(90, expand=True)
-
-        placas.append(temp)
+            centralizar(peso, fonte_peso, x + bloco_w//2, y + bloco_h - 70)
 
     # =========================
-    # PDF FINAL
-    # =========================
-    img = Image.new("RGB", (largura, altura), "white")
-
-    x = 0
-    y = 0
-
-    for p in placas:
-
-        img.paste(p, (x, y))
-
-        x += p.width
-
-        if x >= largura:
-            x = 0
-            y += p.height
-
     nome = f"placas_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.pdf"
-
     img.save(nome, "PDF")
 
     return send_file(nome, as_attachment=True)
