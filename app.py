@@ -21,7 +21,6 @@ def ajustar_fonte(draw, texto, largura_max, tamanho):
         bbox = draw.textbbox((0, 0), texto, font=fonte)
         if (bbox[2] - bbox[0]) <= largura_max - 20:
             return fonte
-
         tamanho -= 2
 
     return ImageFont.load_default()
@@ -56,7 +55,7 @@ def gerar():
     dados = request.form
     qtd = int(dados.get("qtd"))
 
-    # VERTICAL (EM PÉ)
+    # layout normal base
     if qtd == 6:
         colunas, linhas = 2, 3
         fonte_preco_tam = 120
@@ -70,77 +69,99 @@ def gerar():
     largura = 1240
     altura = 1754
 
-    img = Image.new("RGB", (largura, altura), "white")
-    draw = ImageDraw.Draw(img)
-
     bloco_w = largura // colunas
     bloco_h = altura // linhas
 
     try:
         fonte_marca = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
-        fonte_produto = ImageFont.truetype("DejaVuSans-Bold.ttf", 45)
+        fonte_produto = ImageFont.truetype("DejaVuSans-Bold.ttf", 50)
         fonte_preco = ImageFont.truetype("DejaVuSans-Bold.ttf", fonte_preco_tam)
         fonte_rs = ImageFont.truetype("DejaVuSans-Bold.ttf", int(fonte_preco_tam * 0.35))
         fonte_peso = ImageFont.truetype("DejaVuSans-Bold.ttf", 35)
     except:
         fonte_marca = fonte_produto = fonte_preco = fonte_rs = fonte_peso = ImageFont.load_default()
 
-    def centralizar(texto, fonte, x, y):
-        if not texto:
-            return
-        bbox = draw.textbbox((0, 0), texto, font=fonte)
-        lw = bbox[2] - bbox[0]
-        draw.text((x - lw//2, y), texto, font=fonte, fill="black")
+    placas = []
 
+    # =========================
+    # CRIA CADA PLACA (NORMAL)
+    # =========================
     for i in range(qtd):
+
+        temp = Image.new("RGB", (bloco_w, bloco_h), "white")
+        d = ImageDraw.Draw(temp)
 
         produto = dados.get(f"produto{i}", "").upper()
         marca = dados.get(f"marca{i}", "").upper()
         preco = formatar_preco(dados.get(f"preco{i}", ""))
         peso = dados.get(f"peso{i}", "").upper()
 
-        col = i % colunas
-        lin = i // colunas
+        d.rectangle([0, 0, bloco_w, bloco_h], outline="black", width=4)
 
-        x = col * bloco_w
-        y = lin * bloco_h
+        # PRODUTO
+        fonte_p = ajustar_fonte(d, produto, bloco_w, 55)
+        linhas = quebrar_texto(d, produto, fonte_p, bloco_w)
 
-        draw.rectangle([x, y, x + bloco_w, y + bloco_h], outline="black", width=4)
-
-        # PRODUTO (MAIOR + QUEBRADO)
-        fonte_p = ajustar_fonte(draw, produto, bloco_w, 55)
-        linhas = quebrar_texto(draw, produto, fonte_p, bloco_w)
-
-        y_atual = y + 20
-
+        y = 20
         for linha in linhas:
-            centralizar(linha, fonte_p, x + bloco_w//2, y_atual)
-            y_atual += 45
+            bbox = d.textbbox((0, 0), linha, font=fonte_p)
+            lw = bbox[2] - bbox[0]
+            d.text(((bloco_w - lw)//2, y), linha, font=fonte_p, fill="black")
+            y += 45
 
         # MARCA
         if marca:
-            centralizar(marca, fonte_marca, x + bloco_w//2, y_atual + 10)
+            bbox = d.textbbox((0, 0), marca, font=fonte_marca)
+            lw = bbox[2] - bbox[0]
+            d.text(((bloco_w - lw)//2, y + 10), marca, font=fonte_marca, fill="black")
 
         # PREÇO
-        bbox_val = draw.textbbox((0, 0), preco, font=fonte_preco)
-        bbox_rs = draw.textbbox((0, 0), "R$", font=fonte_rs)
+        bbox_val = d.textbbox((0, 0), preco, font=fonte_preco)
+        bbox_rs = d.textbbox((0, 0), "R$", font=fonte_rs)
 
         lw_val = bbox_val[2] - bbox_val[0]
         lw_rs = bbox_rs[2] - bbox_rs[0]
 
         total = lw_val + lw_rs + 10
+        x_preco = (bloco_w - total)//2
+        y_preco = bloco_h//2
 
-        x_inicio = x + (bloco_w - total)//2
-        y_preco = y + (bloco_h//2) - 20
-
-        draw.text((x_inicio, y_preco + 40), "R$", font=fonte_rs, fill="black")
-        draw.text((x_inicio + lw_rs + 10, y_preco), preco, font=fonte_preco, fill="black")
+        d.text((x_preco, y_preco), "R$", font=fonte_rs, fill="black")
+        d.text((x_preco + lw_rs + 10, y_preco), preco, font=fonte_preco, fill="black")
 
         # PESO
         if peso:
-            centralizar(peso, fonte_peso, x + bloco_w//2, y + bloco_h - 70)
+            bbox = d.textbbox((0, 0), peso, font=fonte_peso)
+            lw = bbox[2] - bbox[0]
+            d.text(((bloco_w - lw)//2, bloco_h - 60), peso, font=fonte_peso, fill="black")
+
+        # =========================
+        # ROTAÇÃO REAL (90°)
+        # =========================
+        temp = temp.rotate(90, expand=True)
+
+        placas.append(temp)
+
+    # =========================
+    # MONTA PDF FINAL COM SEGURANÇA
+    # =========================
+    img = Image.new("RGB", (largura, altura), "white")
+
+    x = 0
+    y = 0
+
+    for p in placas:
+
+        img.paste(p, (x, y))
+
+        x += p.width
+
+        if x >= largura:
+            x = 0
+            y += p.height
 
     nome = f"placas_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.pdf"
+
     img.save(nome, "PDF")
 
     return send_file(nome, as_attachment=True)
