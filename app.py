@@ -32,7 +32,7 @@ def ajustar_fonte(
     tamanho
 ):
 
-    while tamanho > 10:
+    while tamanho > 20:
 
         try:
 
@@ -53,7 +53,7 @@ def ajustar_fonte(
 
         largura = bbox[2] - bbox[0]
 
-        if largura <= largura_max - 20:
+        if largura <= largura_max - 40:
             return fonte
 
         tamanho -= 2
@@ -92,7 +92,7 @@ def quebrar_texto(
 
         largura = bbox[2] - bbox[0]
 
-        if largura <= largura_max - 30:
+        if largura <= largura_max - 50:
 
             linha = teste
 
@@ -130,7 +130,7 @@ def gerar():
     )
 
     # =========================
-    # TAMANHO A4 NORMAL
+    # TAMANHO A4
     # =========================
     largura = 1240
     altura = 1754
@@ -201,7 +201,7 @@ def gerar():
         y = lin * bloco_h
 
         # =========================
-        # BORDA DA PLACA
+        # BORDA
         # =========================
         draw.rectangle(
             [
@@ -215,7 +215,7 @@ def gerar():
         )
 
         # =========================
-        # ÁREA INTERNA ROTACIONADA
+        # ÁREA INTERNA
         # =========================
         interno = Image.new(
             "RGBA",
@@ -226,7 +226,7 @@ def gerar():
         d = ImageDraw.Draw(interno)
 
         # =========================
-        # FONTES
+        # FONTES GRANDES
         # =========================
         try:
 
@@ -234,43 +234,43 @@ def gerar():
                 d,
                 produto,
                 bloco_h,
-                70
+                115
             )
 
             fonte_marca = ImageFont.truetype(
                 "DejaVuSans-BoldOblique.ttf",
-                42
+                60
             )
 
             if qtd == 12:
 
                 fonte_preco = ImageFont.truetype(
                     "DejaVuSans-Bold.ttf",
-                    90
+                    110
                 )
 
             elif qtd == 8:
 
                 fonte_preco = ImageFont.truetype(
                     "DejaVuSans-Bold.ttf",
-                    110
+                    135
                 )
 
             else:
 
                 fonte_preco = ImageFont.truetype(
                     "DejaVuSans-Bold.ttf",
-                    130
+                    160
                 )
 
             fonte_rs = ImageFont.truetype(
                 "DejaVuSans-Bold.ttf",
-                45
+                55
             )
 
             fonte_peso = ImageFont.truetype(
                 "DejaVuSans-Bold.ttf",
-                42
+                65
             )
 
         except:
@@ -313,7 +313,7 @@ def gerar():
                 fill="black"
             )
 
-            y_texto += 65
+            y_texto += 90
 
         # =========================
         # MARCA
@@ -331,7 +331,7 @@ def gerar():
             d.text(
                 (
                     (bloco_h - largura_txt) // 2,
-                    y_texto + 10
+                    y_texto + 15
                 ),
                 marca,
                 font=fonte_marca,
@@ -341,17 +341,17 @@ def gerar():
         # =========================
         # PREÇO
         # =========================
-        y_preco = (bloco_w // 2) - 40
+        y_preco = (bloco_w // 2) - 50
 
         d.text(
-            (80, y_preco + 45),
+            (90, y_preco + 60),
             "R$",
             font=fonte_rs,
             fill="black"
         )
 
         d.text(
-            (170, y_preco),
+            (220, y_preco),
             preco,
             font=fonte_preco,
             fill="black"
@@ -373,7 +373,7 @@ def gerar():
             d.text(
                 (
                     (bloco_h - largura_txt) // 2,
-                    bloco_w - 80
+                    bloco_w - 100
                 ),
                 peso,
                 font=fonte_peso,
@@ -381,7 +381,7 @@ def gerar():
             )
 
         # =========================
-        # ROTACIONA APENAS CONTEÚDO
+        # ROTACIONAR APENAS CONTEÚDO
         # =========================
         interno = interno.rotate(
             90,
