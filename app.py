@@ -65,8 +65,8 @@ def gerar():
     # =========================
     # 🔥 A4 EM PAISAGEM (CORRETO)
     # =========================
-    largura = 1240
-    altura = 1754
+    largura = 1754
+    altura =  1240
 
     # =========================
     # GRID OTIMIZADO
