@@ -82,7 +82,7 @@ def quebrar_texto(draw, texto, fonte, largura_max):
     return linhas
 
 # =========================
-# CENTRALIZAR
+# CENTRALIZAR TEXTO
 # =========================
 def centralizar(draw, texto, fonte, centro_x, y):
 
@@ -124,10 +124,15 @@ def gerar():
 
     qtd = int(dados.get("qtd"))
 
-    # A4 horizontal
+    # =========================
+    # A4 HORIZONTAL
+    # =========================
     largura = 1754
     altura = 1240
 
+    # =========================
+    # GRID
+    # =========================
     if qtd == 6:
 
         colunas = 3
@@ -149,6 +154,9 @@ def gerar():
     bloco_w = largura // colunas
     bloco_h = altura // linhas
 
+    # =========================
+    # IMAGEM BASE
+    # =========================
     img = Image.new(
         "RGB",
         (largura, altura),
@@ -157,7 +165,9 @@ def gerar():
 
     draw = ImageDraw.Draw(img)
 
+    # =========================
     # FONTES
+    # =========================
     try:
 
         fonte_marca = ImageFont.truetype(
@@ -187,7 +197,9 @@ def gerar():
         fonte_rs = ImageFont.load_default()
         fonte_peso = ImageFont.load_default()
 
+    # =========================
     # LOOP DAS PLACAS
+    # =========================
     for i in range(qtd):
 
         produto = dados.get(
@@ -218,14 +230,18 @@ def gerar():
         x = col * bloco_w
         y = lin * bloco_h
 
+        # =========================
         # BORDA
+        # =========================
         draw.rectangle(
             [x, y, x + bloco_w, y + bloco_h],
             outline="black",
             width=4
         )
 
+        # =========================
         # PRODUTO
+        # =========================
         fonte_produto = ajustar_fonte(
             draw,
             produto,
@@ -254,7 +270,9 @@ def gerar():
 
             y_texto += 45
 
+        # =========================
         # MARCA
+        # =========================
         if marca:
 
             centralizar(
@@ -265,7 +283,9 @@ def gerar():
                 y_texto + 10
             )
 
+        # =========================
         # PREÇO
+        # =========================
         bbox_val = draw.textbbox(
             (0, 0),
             preco,
@@ -287,6 +307,7 @@ def gerar():
 
         y_preco = y + (bloco_h // 2) - 20
 
+        # R$
         draw.text(
             (x_preco, y_preco + 35),
             "R$",
@@ -294,6 +315,7 @@ def gerar():
             fill="black"
         )
 
+        # VALOR
         draw.text(
             (x_preco + largura_rs + 10, y_preco),
             preco,
@@ -301,7 +323,9 @@ def gerar():
             fill="black"
         )
 
+        # =========================
         # PESO
+        # =========================
         if peso:
 
             centralizar(
@@ -312,7 +336,9 @@ def gerar():
                 y + bloco_h - 60
             )
 
+    # =========================
     # SALVAR PDF
+    # =========================
     nome_pdf = (
         f"placas_"
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.pdf"
