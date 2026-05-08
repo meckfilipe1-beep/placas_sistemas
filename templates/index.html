@@ -1,120 +1,180 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Gerador de Placas</title>
+from flask import Flask, render_template, request, send_file
+from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime
+import os
 
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #f2f2f2;
+app = Flask(__name__)
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+# =========================
+def formatar_preco(valor):
+    try:
+        valor = float(valor.replace(",", "."))
+        return f"{valor:.2f}".replace(".", ",")
+    except:
+        return valor
 
-/* CONTAINER CENTRAL */
-.container {
-    width: 90%;
-    max-width: 500px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.15);
-}
+# =========================
+def ajustar_fonte(draw, texto, largura_max, tamanho):
+    while tamanho > 10:
+        try:
+            fonte = ImageFont.truetype("DejaVuSans-Bold.ttf", tamanho)
+        except:
+            fonte = ImageFont.load_default()
 
-/* INPUTS */
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-}
+        bbox = draw.textbbox((0, 0), texto, font=fonte)
+        if (bbox[2] - bbox[0]) <= largura_max - 20:
+            return fonte
 
-/* BOTÃO */
-button {
-    width: 100%;
-    padding: 12px;
-    background: green;
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    margin-top: 10px;
-}
+        tamanho -= 2
 
-/* TÍTULOS */
-h2, h4 {
-    text-align: center;
-}
-</style>
+    return ImageFont.load_default()
 
-</head>
+# =========================
+def quebrar_texto(draw, texto, fonte, largura_max):
+    palavras = texto.split()
+    linhas = []
+    linha = ""
 
-<body>
+    for p in palavras:
+        teste = linha + " " + p if linha else p
+        bbox = draw.textbbox((0, 0), teste, font=fonte)
 
-<div class="container">
+        if (bbox[2] - bbox[0]) <= largura_max - 30:
+            linha = teste
+        else:
+            linhas.append(linha)
+            linha = p
 
-<h2>GERADOR DE PLACAS</h2>
+    if linha:
+        linhas.append(linha)
 
-<form action="/gerar" method="POST">
+    return linhas
 
-<select name="qtd" id="qtd">
-    <option value="6">6 placas</option>
-    <option value="8">8 placas</option>
-    <option value="12">12 placas</option>
-</select>
+# =========================
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-<div id="campos"></div>
+# =========================
+@app.route("/gerar", methods=["POST"])
+def gerar():
 
-<button type="submit">GERAR PDF</button>
+    dados = request.form
+    qtd = int(dados.get("qtd"))
 
-</form>
+    # =========================
+    # 🔥 A4 EM PAISAGEM (CORRETO)
+    # =========================
+    largura = 1754
+    altura = 1240
 
-</div>
+    # =========================
+    # GRID OTIMIZADO
+    # =========================
+    if qtd == 6:
+        colunas, linhas = 3, 2
+        fonte_preco_tam = 120
 
-<script>
-function gerarCampos(qtd) {
-    let div = document.getElementById("campos");
-    div.innerHTML = "";
+    elif qtd == 8:
+        colunas, linhas = 4, 2
+        fonte_preco_tam = 95
 
-    for (let i = 0; i < qtd; i++) {
-        div.innerHTML += `
-            <h4>Placa ${i + 1}</h4>
-            <input name="produto${i}" placeholder="Produto">
-            <input name="marca${i}" placeholder="Marca">
-            <input name="preco${i}" placeholder="Preço">
-            <input name="peso${i}" placeholder="Peso">
-        `;
-    }
-}
+    else:  # 12 placas
+        colunas, linhas = 4, 3
+        fonte_preco_tam = 75
 
-// inicial (6 placas)
-gerarCampos(6);
+    bloco_w = largura // colunas
+    bloco_h = altura // linhas
 
-// muda quantidade
-document.getElementById("qtd").addEventListener("change", function() {
-    gerarCampos(parseInt(this.value));
-});
+    # =========================
+    # FONTES
+    # =========================
+    try:
+        fonte_marca = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
+        fonte_produto = ImageFont.truetype("DejaVuSans-Bold.ttf", 50)
+        fonte_preco = ImageFont.truetype("DejaVuSans-Bold.ttf", fonte_preco_tam)
+        fonte_rs = ImageFont.truetype("DejaVuSans-Bold.ttf", int(fonte_preco_tam * 0.35))
+        fonte_peso = ImageFont.truetype("DejaVuSans-Bold.ttf", 35)
+    except:
+        fonte_marca = fonte_produto = fonte_preco = fonte_rs = fonte_peso = ImageFont.load_default()
 
-// ENTER pula campo
-document.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-        e.preventDefault();
+    def centralizar(draw, texto, fonte, x, y):
+        if not texto:
+            return
+        bbox = draw.textbbox((0, 0), texto, font=fonte)
+        lw = bbox[2] - bbox[0]
+        draw.text((x - lw//2, y), texto, font=fonte, fill="black")
 
-        let inputs = Array.from(document.querySelectorAll("input"));
-        let index = inputs.indexOf(document.activeElement);
+    # =========================
+    img = Image.new("RGB", (largura, altura), "white")
+    draw = ImageDraw.Draw(img)
 
-        if (index > -1 && index < inputs.length - 1) {
-            inputs[index + 1].focus();
-        }
-    }
-});
-</script>
+    # =========================
+    for i in range(qtd):
 
-</body>
-</html>
+        produto = dados.get(f"produto{i}", "").upper()
+        marca = dados.get(f"marca{i}", "").upper()
+        preco = formatar_preco(dados.get(f"preco{i}", ""))
+        peso = dados.get(f"peso{i}", "").upper()
+
+        col = i % colunas
+        lin = i // colunas
+
+        x = col * bloco_w
+        y = lin * bloco_h
+
+        draw.rectangle([x, y, x + bloco_w, y + bloco_h], outline="black", width=4)
+
+        # =========================
+        # PRODUTO (MAIS ESPAÇO)
+        # =========================
+        fonte_p = ajustar_fonte(draw, produto, bloco_w, 55)
+        linhas = quebrar_texto(draw, produto, fonte_p, bloco_w)
+
+        y_local = y + 20
+
+        for linha in linhas:
+            centralizar(draw, linha, fonte_p, x + bloco_w//2, y_local)
+            y_local += 45
+
+        # =========================
+        # MARCA
+        # =========================
+        if marca:
+            centralizar(draw, marca, fonte_marca, x + bloco_w//2, y_local + 10)
+
+        # =========================
+        # PREÇO
+        # =========================
+        bbox_val = draw.textbbox((0, 0), preco, font=fonte_preco)
+        bbox_rs = draw.textbbox((0, 0), "R$", font=fonte_rs)
+
+        lw_val = bbox_val[2] - bbox_val[0]
+        lw_rs = bbox_rs[2] - bbox_rs[0]
+
+        total = lw_val + lw_rs + 10
+
+        x_preco = x + (bloco_w - total)//2
+        y_preco = y + (bloco_h//2) - 20
+
+        draw.text((x_preco, y_preco + 40), "R$", font=fonte_rs, fill="black")
+        draw.text((x_preco + lw_rs + 10, y_preco), preco, font=fonte_preco, fill="black")
+
+        # =========================
+        # PESO
+        # =========================
+        if peso:
+            centralizar(draw, peso, fonte_peso, x + bloco_w//2, y + bloco_h - 70)
+
+    # =========================
+    # PDF FINAL
+    # =========================
+    nome = f"placas_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.pdf"
+    img.save(nome, "PDF")
+
+    return send_file(nome, as_attachment=True)
+
+# =========================
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
