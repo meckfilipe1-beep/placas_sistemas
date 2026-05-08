@@ -12,9 +12,7 @@ def formatar_preco(valor):
 
     try:
 
-        valor = float(
-            valor.replace(",", ".")
-        )
+        valor = float(valor.replace(",", "."))
 
         return f"{valor:.2f}".replace(".", ",")
 
@@ -25,12 +23,7 @@ def formatar_preco(valor):
 # =========================
 # AJUSTAR FONTE
 # =========================
-def ajustar_fonte(
-    draw,
-    texto,
-    largura_max,
-    tamanho
-):
+def ajustar_fonte(draw, texto, largura_max, tamanho):
 
     while tamanho > 15:
 
@@ -63,12 +56,7 @@ def ajustar_fonte(
 # =========================
 # QUEBRAR TEXTO
 # =========================
-def quebrar_texto(
-    draw,
-    texto,
-    fonte,
-    largura_max
-):
+def quebrar_texto(draw, texto, fonte, largura_max):
 
     palavras = texto.split()
 
@@ -78,11 +66,7 @@ def quebrar_texto(
 
     for palavra in palavras:
 
-        teste = (
-            linha + " " + palavra
-            if linha
-            else palavra
-        )
+        teste = linha + " " + palavra if linha else palavra
 
         bbox = draw.textbbox(
             (0, 0),
@@ -110,13 +94,7 @@ def quebrar_texto(
 # =========================
 # CENTRALIZAR
 # =========================
-def centralizar(
-    draw,
-    texto,
-    fonte,
-    centro_x,
-    y
-):
+def centralizar(draw, texto, fonte, centro_x, y):
 
     if not texto:
         return
@@ -144,9 +122,7 @@ def centralizar(
 @app.route("/")
 def home():
 
-    return render_template(
-        "index.html"
-    )
+    return render_template("index.html")
 
 # =========================
 # GERAR PDF
@@ -156,12 +132,10 @@ def gerar():
 
     dados = request.form
 
-    qtd = int(
-        dados.get("qtd")
-    )
+    qtd = int(dados.get("qtd"))
 
     # =========================
-    # A4 NORMAL
+    # A4
     # =========================
     largura = 1240
     altura = 1754
@@ -173,19 +147,16 @@ def gerar():
 
         colunas = 2
         linhas = 3
-        fonte_preco_tam = 120
 
     elif qtd == 8:
 
         colunas = 2
         linhas = 4
-        fonte_preco_tam = 95
 
     else:
 
         colunas = 3
         linhas = 4
-        fonte_preco_tam = 70
 
     bloco_w = largura // colunas
     bloco_h = altura // linhas
@@ -202,28 +173,48 @@ def gerar():
     draw = ImageDraw.Draw(img)
 
     # =========================
-    # FONTES
+    # FONTES GRANDES
     # =========================
     try:
 
+        # MARCA
         fonte_marca = ImageFont.truetype(
             "DejaVuSans-BoldOblique.ttf",
-            32
+            52
         )
 
-        fonte_preco = ImageFont.truetype(
-            "DejaVuSans-Bold.ttf",
-            fonte_preco_tam
-        )
+        # PREÇO
+        if qtd == 6:
 
+            fonte_preco = ImageFont.truetype(
+                "DejaVuSans-Bold.ttf",
+                170
+            )
+
+        elif qtd == 8:
+
+            fonte_preco = ImageFont.truetype(
+                "DejaVuSans-Bold.ttf",
+                135
+            )
+
+        else:
+
+            fonte_preco = ImageFont.truetype(
+                "DejaVuSans-Bold.ttf",
+                95
+            )
+
+        # R$
         fonte_rs = ImageFont.truetype(
             "DejaVuSans-Bold.ttf",
-            int(fonte_preco_tam * 0.35)
+            50
         )
 
+        # PESO
         fonte_peso = ImageFont.truetype(
             "DejaVuSans-Bold.ttf",
-            35
+            55
         )
 
     except:
@@ -321,7 +312,7 @@ def gerar():
                 marca,
                 fonte_marca,
                 x + bloco_w // 2,
-                y_texto + 10
+                y_texto + 25
             )
 
         # =========================
@@ -343,7 +334,7 @@ def gerar():
 
         largura_rs = bbox_rs[2] - bbox_rs[0]
 
-        total = largura_val + largura_rs + 10
+        total = largura_val + largura_rs + 15
 
         x_preco = x + (
             (bloco_w - total) // 2
@@ -357,7 +348,7 @@ def gerar():
         draw.text(
             (
                 x_preco,
-                y_preco + 40
+                y_preco + 55
             ),
             "R$",
             font=fonte_rs,
@@ -367,7 +358,7 @@ def gerar():
         # VALOR
         draw.text(
             (
-                x_preco + largura_rs + 10,
+                x_preco + largura_rs + 15,
                 y_preco
             ),
             preco,
@@ -385,7 +376,7 @@ def gerar():
                 peso,
                 fonte_peso,
                 x + bloco_w // 2,
-                y + bloco_h - 70
+                y + bloco_h - 85
             )
 
     # =========================
