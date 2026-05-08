@@ -1,17 +1,174 @@
-from flask import Flask
+<!DOCTYPE html>
+<html>
 
-app = Flask(__name__)
+<head>
 
-@app.route("/")
-def home():
-    return "SITE ONLINE"
+<meta charset="UTF-8">
 
-if __name__ == "__main__":
-    import os
+<title>Gerador de Placas</title>
 
-    port = int(os.environ.get("PORT", 10000))
+<style>
 
-    app.run(
-        host="0.0.0.0",
-        port=port
-    )
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f2f2f2;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    min-height:100vh;
+}
+
+.container{
+    width:90%;
+    max-width:600px;
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:12px;
+
+    box-shadow:0 0 20px rgba(0,0,0,0.15);
+}
+
+input, select{
+    width:100%;
+
+    padding:10px;
+
+    margin:5px 0;
+
+    border:1px solid #ccc;
+
+    border-radius:6px;
+}
+
+button{
+    width:100%;
+
+    padding:12px;
+
+    background:green;
+
+    color:white;
+
+    font-weight:bold;
+
+    border:none;
+
+    border-radius:8px;
+
+    margin-top:10px;
+}
+
+h2, h4{
+    text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>GERADOR DE PLACAS</h2>
+
+<form action="/gerar" method="POST">
+
+<select name="qtd" id="qtd">
+
+<option value="6">6 placas</option>
+
+<option value="8">8 placas</option>
+
+<option value="12">12 placas</option>
+
+</select>
+
+<div id="campos"></div>
+
+<button type="submit">
+GERAR PDF
+</button>
+
+</form>
+
+</div>
+
+<script>
+
+function gerarCampos(qtd){
+
+    let div = document.getElementById("campos");
+
+    div.innerHTML = "";
+
+    for(let i = 0; i < qtd; i++){
+
+        div.innerHTML += `
+
+            <h4>Placa ${i + 1}</h4>
+
+            <input
+                name="produto${i}"
+                placeholder="Produto"
+            >
+
+            <input
+                name="marca${i}"
+                placeholder="Marca"
+            >
+
+            <input
+                name="preco${i}"
+                placeholder="Preço"
+            >
+
+            <input
+                name="peso${i}"
+                placeholder="Peso"
+            >
+        `;
+    }
+}
+
+gerarCampos(6);
+
+document.getElementById("qtd")
+.addEventListener("change", function(){
+
+    gerarCampos(
+        parseInt(this.value)
+    );
+});
+
+document.addEventListener("keydown", function(e){
+
+    if(e.key === "Enter"){
+
+        e.preventDefault();
+
+        let inputs = Array.from(
+            document.querySelectorAll("input")
+        );
+
+        let index = inputs.indexOf(
+            document.activeElement
+        );
+
+        if(index > -1 && index < inputs.length - 1){
+
+            inputs[index + 1].focus();
+        }
+    }
+});
+
+</script>
+
+</body>
+</html>
