@@ -11,15 +11,10 @@ app = Flask(__name__)
 def formatar_preco(valor):
 
     try:
-
-        valor = float(
-            valor.replace(",", ".")
-        )
-
+        valor = float(valor.replace(",", "."))
         return f"{valor:.2f}".replace(".", ",")
 
     except:
-
         return valor
 
 # =========================
@@ -99,7 +94,6 @@ def quebrar_texto(
         else:
 
             linhas.append(linha)
-
             linha = palavra
 
     if linha:
@@ -113,9 +107,7 @@ def quebrar_texto(
 @app.route("/")
 def home():
 
-    return render_template(
-        "index.html"
-    )
+    return render_template("index.html")
 
 # =========================
 # GERAR PDF
@@ -125,12 +117,10 @@ def gerar():
 
     dados = request.form
 
-    qtd = int(
-        dados.get("qtd")
-    )
+    qtd = int(dados.get("qtd"))
 
     # =========================
-    # TAMANHO A4
+    # A4 NORMAL
     # =========================
     largura = 1240
     altura = 1754
@@ -157,7 +147,7 @@ def gerar():
     bloco_h = altura // linhas
 
     # =========================
-    # IMAGEM BASE
+    # IMAGEM
     # =========================
     img = Image.new(
         "RGB",
@@ -168,7 +158,7 @@ def gerar():
     draw = ImageDraw.Draw(img)
 
     # =========================
-    # LOOP DAS PLACAS
+    # LOOP
     # =========================
     for i in range(qtd):
 
@@ -215,62 +205,58 @@ def gerar():
         )
 
         # =========================
-        # ÁREA INTERNA
+        # CONTEÚDO INTERNO
         # =========================
         interno = Image.new(
             "RGBA",
-            (bloco_h, bloco_w),
+            (bloco_w, bloco_h),
             (255, 255, 255, 0)
         )
 
         d = ImageDraw.Draw(interno)
 
         # =========================
-        # FONTES GRANDES
+        # FONTES GIGANTES
         # =========================
         try:
 
             fonte_produto = ajustar_fonte(
                 d,
                 produto,
-                bloco_h,
-                115
+                bloco_w,
+                140
             )
 
             fonte_marca = ImageFont.truetype(
                 "DejaVuSans-BoldOblique.ttf",
-                60
+                70
             )
 
             if qtd == 12:
 
-                fonte_preco = ImageFont.truetype(
-                    "DejaVuSans-Bold.ttf",
-                    110
-                )
+                preco_tam = 120
 
             elif qtd == 8:
 
-                fonte_preco = ImageFont.truetype(
-                    "DejaVuSans-Bold.ttf",
-                    135
-                )
+                preco_tam = 150
 
             else:
 
-                fonte_preco = ImageFont.truetype(
-                    "DejaVuSans-Bold.ttf",
-                    160
-                )
+                preco_tam = 180
+
+            fonte_preco = ImageFont.truetype(
+                "DejaVuSans-Bold.ttf",
+                preco_tam
+            )
 
             fonte_rs = ImageFont.truetype(
                 "DejaVuSans-Bold.ttf",
-                55
+                65
             )
 
             fonte_peso = ImageFont.truetype(
                 "DejaVuSans-Bold.ttf",
-                65
+                75
             )
 
         except:
@@ -288,10 +274,10 @@ def gerar():
             d,
             produto,
             fonte_produto,
-            bloco_h
+            bloco_w
         )
 
-        y_texto = 30
+        y_texto = 40
 
         for linha in linhas:
 
@@ -305,7 +291,7 @@ def gerar():
 
             d.text(
                 (
-                    (bloco_h - largura_txt) // 2,
+                    (bloco_w - largura_txt) // 2,
                     y_texto
                 ),
                 linha,
@@ -313,7 +299,7 @@ def gerar():
                 fill="black"
             )
 
-            y_texto += 90
+            y_texto += 110
 
         # =========================
         # MARCA
@@ -330,8 +316,8 @@ def gerar():
 
             d.text(
                 (
-                    (bloco_h - largura_txt) // 2,
-                    y_texto + 15
+                    (bloco_w - largura_txt) // 2,
+                    y_texto + 20
                 ),
                 marca,
                 font=fonte_marca,
@@ -341,10 +327,10 @@ def gerar():
         # =========================
         # PREÇO
         # =========================
-        y_preco = (bloco_w // 2) - 50
+        y_preco = (bloco_h // 2) - 60
 
         d.text(
-            (90, y_preco + 60),
+            (90, y_preco + 70),
             "R$",
             font=fonte_rs,
             fill="black"
@@ -372,8 +358,8 @@ def gerar():
 
             d.text(
                 (
-                    (bloco_h - largura_txt) // 2,
-                    bloco_w - 100
+                    (bloco_w - largura_txt) // 2,
+                    bloco_h - 120
                 ),
                 peso,
                 font=fonte_peso,
@@ -381,7 +367,7 @@ def gerar():
             )
 
         # =========================
-        # ROTACIONAR APENAS CONTEÚDO
+        # ROTACIONA SOMENTE TEXTO
         # =========================
         interno = interno.rotate(
             90,
@@ -395,7 +381,7 @@ def gerar():
         )
 
     # =========================
-    # SALVAR PDF
+    # PDF
     # =========================
     nome_pdf = (
         f"placas_"
@@ -413,7 +399,7 @@ def gerar():
     )
 
 # =========================
-# INICIAR APP
+# INICIAR
 # =========================
 if __name__ == "__main__":
 
