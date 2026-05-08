@@ -11,10 +11,15 @@ app = Flask(__name__)
 def formatar_preco(valor):
 
     try:
-        valor = float(valor.replace(",", "."))
+
+        valor = float(
+            valor.replace(",", ".")
+        )
+
         return f"{valor:.2f}".replace(".", ",")
 
     except:
+
         return valor
 
 # =========================
@@ -27,7 +32,7 @@ def ajustar_fonte(
     tamanho
 ):
 
-    while tamanho > 20:
+    while tamanho > 15:
 
         try:
 
@@ -48,7 +53,7 @@ def ajustar_fonte(
 
         largura = bbox[2] - bbox[0]
 
-        if largura <= largura_max - 40:
+        if largura <= largura_max - 30:
             return fonte
 
         tamanho -= 2
@@ -87,13 +92,14 @@ def quebrar_texto(
 
         largura = bbox[2] - bbox[0]
 
-        if largura <= largura_max - 50:
+        if largura <= largura_max - 40:
 
             linha = teste
 
         else:
 
             linhas.append(linha)
+
             linha = palavra
 
     if linha:
@@ -102,12 +108,45 @@ def quebrar_texto(
     return linhas
 
 # =========================
+# CENTRALIZAR
+# =========================
+def centralizar(
+    draw,
+    texto,
+    fonte,
+    centro_x,
+    y
+):
+
+    if not texto:
+        return
+
+    bbox = draw.textbbox(
+        (0, 0),
+        texto,
+        font=fonte
+    )
+
+    largura = bbox[2] - bbox[0]
+
+    x = centro_x - (largura // 2)
+
+    draw.text(
+        (x, y),
+        texto,
+        font=fonte,
+        fill="black"
+    )
+
+# =========================
 # HOME
 # =========================
 @app.route("/")
 def home():
 
-    return render_template("index.html")
+    return render_template(
+        "index.html"
+    )
 
 # =========================
 # GERAR PDF
@@ -117,7 +156,9 @@ def gerar():
 
     dados = request.form
 
-    qtd = int(dados.get("qtd"))
+    qtd = int(
+        dados.get("qtd")
+    )
 
     # =========================
     # A4 NORMAL
@@ -132,16 +173,19 @@ def gerar():
 
         colunas = 2
         linhas = 3
+        fonte_preco_tam = 120
 
     elif qtd == 8:
 
         colunas = 2
         linhas = 4
+        fonte_preco_tam = 95
 
     else:
 
         colunas = 3
         linhas = 4
+        fonte_preco_tam = 70
 
     bloco_w = largura // colunas
     bloco_h = altura // linhas
@@ -158,7 +202,39 @@ def gerar():
     draw = ImageDraw.Draw(img)
 
     # =========================
-    # LOOP
+    # FONTES
+    # =========================
+    try:
+
+        fonte_marca = ImageFont.truetype(
+            "DejaVuSans-BoldOblique.ttf",
+            32
+        )
+
+        fonte_preco = ImageFont.truetype(
+            "DejaVuSans-Bold.ttf",
+            fonte_preco_tam
+        )
+
+        fonte_rs = ImageFont.truetype(
+            "DejaVuSans-Bold.ttf",
+            int(fonte_preco_tam * 0.35)
+        )
+
+        fonte_peso = ImageFont.truetype(
+            "DejaVuSans-Bold.ttf",
+            35
+        )
+
+    except:
+
+        fonte_marca = ImageFont.load_default()
+        fonte_preco = ImageFont.load_default()
+        fonte_rs = ImageFont.load_default()
+        fonte_peso = ImageFont.load_default()
+
+    # =========================
+    # LOOP DAS PLACAS
     # =========================
     for i in range(qtd):
 
@@ -205,139 +281,95 @@ def gerar():
         )
 
         # =========================
-        # CONTEÚDO INTERNO
-        # =========================
-        interno = Image.new(
-            "RGBA",
-            (bloco_w, bloco_h),
-            (255, 255, 255, 0)
-        )
-
-        d = ImageDraw.Draw(interno)
-
-        # =========================
-        # FONTES GIGANTES
-        # =========================
-        try:
-
-            fonte_produto = ajustar_fonte(
-                d,
-                produto,
-                bloco_w,
-                140
-            )
-
-            fonte_marca = ImageFont.truetype(
-                "DejaVuSans-BoldOblique.ttf",
-                70
-            )
-
-            if qtd == 12:
-
-                preco_tam = 120
-
-            elif qtd == 8:
-
-                preco_tam = 150
-
-            else:
-
-                preco_tam = 180
-
-            fonte_preco = ImageFont.truetype(
-                "DejaVuSans-Bold.ttf",
-                preco_tam
-            )
-
-            fonte_rs = ImageFont.truetype(
-                "DejaVuSans-Bold.ttf",
-                65
-            )
-
-            fonte_peso = ImageFont.truetype(
-                "DejaVuSans-Bold.ttf",
-                75
-            )
-
-        except:
-
-            fonte_produto = ImageFont.load_default()
-            fonte_marca = ImageFont.load_default()
-            fonte_preco = ImageFont.load_default()
-            fonte_rs = ImageFont.load_default()
-            fonte_peso = ImageFont.load_default()
-
-        # =========================
         # PRODUTO
         # =========================
-        linhas = quebrar_texto(
-            d,
+        fonte_produto = ajustar_fonte(
+            draw,
+            produto,
+            bloco_w,
+            60
+        )
+
+        linhas_texto = quebrar_texto(
+            draw,
             produto,
             fonte_produto,
             bloco_w
         )
 
-        y_texto = 40
+        y_texto = y + 20
 
-        for linha in linhas:
+        for linha in linhas_texto:
 
-            bbox = d.textbbox(
-                (0, 0),
+            centralizar(
+                draw,
                 linha,
-                font=fonte_produto
+                fonte_produto,
+                x + bloco_w // 2,
+                y_texto
             )
 
-            largura_txt = bbox[2] - bbox[0]
-
-            d.text(
-                (
-                    (bloco_w - largura_txt) // 2,
-                    y_texto
-                ),
-                linha,
-                font=fonte_produto,
-                fill="black"
-            )
-
-            y_texto += 110
+            y_texto += 45
 
         # =========================
         # MARCA
         # =========================
         if marca:
 
-            bbox = d.textbbox(
-                (0, 0),
+            centralizar(
+                draw,
                 marca,
-                font=fonte_marca
-            )
-
-            largura_txt = bbox[2] - bbox[0]
-
-            d.text(
-                (
-                    (bloco_w - largura_txt) // 2,
-                    y_texto + 20
-                ),
-                marca,
-                font=fonte_marca,
-                fill="black"
+                fonte_marca,
+                x + bloco_w // 2,
+                y_texto + 10
             )
 
         # =========================
         # PREÇO
         # =========================
-        y_preco = (bloco_h // 2) - 60
+        bbox_val = draw.textbbox(
+            (0, 0),
+            preco,
+            font=fonte_preco
+        )
 
-        d.text(
-            (90, y_preco + 70),
+        bbox_rs = draw.textbbox(
+            (0, 0),
+            "R$",
+            font=fonte_rs
+        )
+
+        largura_val = bbox_val[2] - bbox_val[0]
+
+        largura_rs = bbox_rs[2] - bbox_rs[0]
+
+        total = largura_val + largura_rs + 10
+
+        x_preco = x + (
+            (bloco_w - total) // 2
+        )
+
+        y_preco = y + (
+            (bloco_h // 2) - 20
+        )
+
+        # R$
+        draw.text(
+            (
+                x_preco,
+                y_preco + 40
+            ),
             "R$",
             font=fonte_rs,
             fill="black"
         )
 
-        d.text(
-            (220, y_preco),
+        # VALOR
+        draw.text(
+            (
+                x_preco + largura_rs + 10,
+                y_preco
+            ),
             preco,
             font=fonte_preco,
             fill="black"
@@ -348,40 +380,16 @@ def gerar():
         # =========================
         if peso:
 
-            bbox = d.textbbox(
-                (0, 0),
+            centralizar(
+                draw,
                 peso,
-                font=fonte_peso
+                fonte_peso,
+                x + bloco_w // 2,
+                y + bloco_h - 70
             )
-
-            largura_txt = bbox[2] - bbox[0]
-
-            d.text(
-                (
-                    (bloco_w - largura_txt) // 2,
-                    bloco_h - 120
-                ),
-                peso,
-                font=fonte_peso,
-                fill="black"
-            )
-
-        # =========================
-        # ROTACIONA SOMENTE TEXTO
-        # =========================
-        interno = interno.rotate(
-            90,
-            expand=True
-        )
-
-        img.paste(
-            interno,
-            (x, y),
-            interno
-        )
 
     # =========================
-    # PDF
+    # SALVAR PDF
     # =========================
     nome_pdf = (
         f"placas_"
@@ -399,7 +407,7 @@ def gerar():
     )
 
 # =========================
-# INICIAR
+# INICIAR APP
 # =========================
 if __name__ == "__main__":
 
