@@ -79,18 +79,18 @@ def gerar():
     qtd = int(dados.get("qtd"))
 
     # =========================
-    # LAYOUT LARGO (DEITADO)
+    # LAYOUT VERTICAL (EM PÉ)
     # =========================
     if qtd == 6:
-        colunas, linhas = 3, 2
+        colunas, linhas = 2, 3
         fonte_preco_tam = 120
 
     elif qtd == 8:
-        colunas, linhas = 4, 2
+        colunas, linhas = 2, 4
         fonte_preco_tam = 95
 
     else:
-        colunas, linhas = 4, 3
+        colunas, linhas = 3, 4
         fonte_preco_tam = 70
 
     # =========================
@@ -176,7 +176,7 @@ def gerar():
             y_produto += 45
 
         # =========================
-        # MARCA (NEGRITO + EFEITO INCLINADO)
+        # MARCA (NEGRITO + EFEITO VISUAL INCLINADO)
         # =========================
         y_marca = y_produto + 10
 
@@ -187,7 +187,7 @@ def gerar():
 
             x_texto = x + (bloco_w - largura_texto) // 2
 
-            # efeito inclinado fake (sombra leve)
+            # sombra leve (efeito inclinado visual)
             draw.text(
                 (x_texto + 2, y_marca),
                 marca,
@@ -212,36 +212,4 @@ def gerar():
         largura_rs = bbox_rs[2] - bbox_rs[0]
 
         espaco = 10
-        largura_total = largura_rs + espaco + largura_val
-
-        x_inicio = x + (bloco_w - largura_total) // 2
-        y_preco = y + (bloco_h // 2) - 20
-
-        draw.text((x_inicio, y_preco + 40), "R$", font=fonte_rs, fill="black")
-
-        draw.text(
-            (x_inicio + largura_rs + espaco, y_preco),
-            preco,
-            font=fonte_preco,
-            fill="black"
-        )
-
-        # =========================
-        # PESO
-        # =========================
-        centralizar(peso, fonte_peso, x, y + bloco_h - 70, bloco_w)
-
-    # =========================
-    # SALVAR PDF
-    # =========================
-    nome_pdf = f"placas_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.pdf"
-
-    img.save(nome_pdf, "PDF")
-
-    return send_file(nome_pdf, as_attachment=True)
-
-# =========================
-# START
-# =========================
-if __name__ == "__main__":
-    app.run()
+        largura_total = largura_rs +
