@@ -1,56 +1,82 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <meta charset="UTF-8">
+
 <title>Gerador de Placas</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #f2f2f2;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f2f2f2;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    min-height:100vh;
 }
 
-/* CARD CENTRAL */
-.container {
-    width: 90%;
-    max-width: 600px;
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.15);
+.container{
+    width:90%;
+    max-width:600px;
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:12px;
+
+    box-shadow:0 0 20px rgba(0,0,0,0.15);
 }
 
-/* INPUTS */
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+h2,h4{
+    text-align:center;
 }
 
-/* BOTÃO */
-button {
-    width: 100%;
-    padding: 12px;
-    background: green;
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    margin-top: 10px;
+input,select{
+
+    width:100%;
+
+    padding:10px;
+
+    margin:5px 0;
+
+    border:1px solid #ccc;
+
+    border-radius:6px;
+
+    box-sizing:border-box;
 }
 
-/* TÍTULOS */
-h2, h4 {
-    text-align: center;
+button{
+
+    width:100%;
+
+    padding:12px;
+
+    background:green;
+
+    color:white;
+
+    font-weight:bold;
+
+    border:none;
+
+    border-radius:8px;
+
+    margin-top:10px;
+
+    cursor:pointer;
 }
+
+button:hover{
+    opacity:0.9;
+}
+
 </style>
 
 </head>
@@ -63,50 +89,135 @@ h2, h4 {
 
 <form action="/gerar" method="POST">
 
-<select name="qtd">
+<select name="qtd" id="qtd">
+
     <option value="6">6 placas</option>
+
     <option value="8">8 placas</option>
+
     <option value="12">12 placas</option>
+
 </select>
 
 <div id="campos"></div>
 
-<button type="submit">GERAR PDF</button>
+<button type="submit">
+GERAR PDF
+</button>
 
 </form>
 
 </div>
 
 <script>
-function gerarCampos() {
+
+function gerarCampos(qtd){
+
     let div = document.getElementById("campos");
+
     div.innerHTML = "";
 
-    for (let i = 0; i < 12; i++) {
+    for(let i = 0; i < qtd; i++){
+
         div.innerHTML += `
-            <h4>Placa ${i+1}</h4>
-            <input name="produto${i}" placeholder="Produto">
-            <input name="marca${i}" placeholder="Marca">
-            <input name="preco${i}" placeholder="Preço">
-            <input name="peso${i}" placeholder="Peso">
+
+            <h4>Placa ${i + 1}</h4>
+
+            <input
+                name="produto${i}"
+                placeholder="Produto"
+            >
+
+            <input
+                name="marca${i}"
+                placeholder="Marca"
+            >
+
+            <input
+                name="preco${i}"
+                placeholder="Preço"
+            >
+
+            <input
+                name="peso${i}"
+                placeholder="Peso"
+            >
+
         `;
     }
 }
 
-gerarCampos();
+//
+// CARREGAR ÚLTIMA OPÇÃO
+//
+window.onload = function(){
 
-// ENTER pula campo
-document.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-        e.preventDefault();
-        let inputs = Array.from(document.querySelectorAll("input"));
-        let index = inputs.indexOf(document.activeElement);
+    let salva = localStorage.getItem(
+        "qtdPlacas"
+    );
 
-        if (index > -1 && index < inputs.length - 1) {
-            inputs[index + 1].focus();
+    if(salva){
+
+        document.getElementById(
+            "qtd"
+        ).value = salva;
+
+        gerarCampos(
+            parseInt(salva)
+        );
+
+    }else{
+
+        gerarCampos(6);
+    }
+};
+
+//
+// MUDAR QUANTIDADE
+//
+document.getElementById("qtd")
+.addEventListener("change", function(){
+
+    localStorage.setItem(
+        "qtdPlacas",
+        this.value
+    );
+
+    gerarCampos(
+        parseInt(this.value)
+    );
+});
+
+//
+// ENTER PASSA PRO PRÓXIMO
+//
+document.addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key === "Enter"){
+
+            e.preventDefault();
+
+            let inputs = Array.from(
+                document.querySelectorAll("input")
+            );
+
+            let index = inputs.indexOf(
+                document.activeElement
+            );
+
+            if(
+                index > -1 &&
+                index < inputs.length - 1
+            ){
+
+                inputs[index + 1].focus();
+            }
         }
     }
-});
+);
+
 </script>
 
 </body>
